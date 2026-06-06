@@ -1,15 +1,17 @@
 package NodeMaterials;
 
 import java.security.KeyPair;
+import java.security.PublicKey;
+import java.util.Objects;
 
 public class MixnetNode {
 
-    NodeConfig config;
-    KeyPair keyPair;
+    final private NodeConfig config;
+    final private KeyPair keyPair;
 
     public MixnetNode(NodeConfig config, KeyPair keyPair) {
-        this.config = config;
-        this.keyPair = keyPair;
+        this.config = Objects.requireNonNull(config, "Config cant be null, sorry");
+        this.keyPair = Objects.requireNonNull(keyPair, "Cant be a null either, yikes");
     }
 
     public String getNodeId() {
@@ -20,8 +22,8 @@ public class MixnetNode {
         return config;
     }
 
-    public void getPublicKey() {
-
+    public PublicKey getPublicKey() {
+        return keyPair.getPublic();
     }
 
     // we dont make a get private key since its only used internally and it shouldn't be accessible
