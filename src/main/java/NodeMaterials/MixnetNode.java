@@ -26,8 +26,14 @@ public class MixnetNode {
         return keyPair.getPublic();
     }
 
-    // we dont make a get private key since its only used internally and it shouldn't be accessible
+    @Override
+    public String toString() {
+        return "MixnetNode{" +
+                "config=" + config +
+                '}';
+    }
 
+    // we dont make a get private key since its only used internally and it shouldn't be accessible
     public void processRelay() {
         // processing relay shuffle and forwarding
     }

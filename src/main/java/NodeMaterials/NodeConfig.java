@@ -4,6 +4,9 @@ import java.util.Objects;
 
 public class NodeConfig {
 
+    private static final int MIN_PORT = 1;
+    private static final int MAX_PORT = 65535;
+
     private final String nodeID;
     // node network address ( could be considered to work like localhost )
     private final String host;
@@ -22,13 +25,11 @@ public class NodeConfig {
             throw new IllegalArgumentException("Host cannot be blank");
         }
 
-        if (port < 1 || port > 65535) {
-            throw new IllegalArgumentException("Port must be between 1 and 65535");
+        if (port < MIN_PORT || port > MAX_PORT) {
+            throw new IllegalArgumentException(
+                    "Port must be between " + MIN_PORT + " and " + MAX_PORT
+            );
         }
-    }
-
-    public void NodeConfig() {
-
     }
 
     public String getNodeID() {
