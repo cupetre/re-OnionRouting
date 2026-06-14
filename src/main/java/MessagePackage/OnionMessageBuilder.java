@@ -52,6 +52,7 @@ public class OnionMessageBuilder {
                 encryptedData.getCiphertext());
     }
 
+    // buildup for last node, aka the fisrt one in the sequence of ecndoing and encryption
     public static OnionPacket buildDelivery(
             byte[] message,
             PublicKey destinationPublicKey
@@ -63,5 +64,81 @@ public class OnionMessageBuilder {
                 deliveryLayer,
                 destinationPublicKey
         );
+    }
+
+    // after first/last node gets finished, the rest of the node gets wrapped
+    public static OnionPacket wrapRelay(
+            String nextNodeID, // which node's next
+            OnionPacket innerPacket, // the packet for wrapping
+            PublicKey relayPublicKey // the key to encrypt
+    ) throws InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
+        DecryptedLayer relayLater =
+                DecryptedLayer.relay(
+                        nextNodeID,
+                        innerPacket
+                );
+
+        return encryptLayer(
+                relayLater,
+                relayPublicKey
+                );
+    }
+
+    // now lets automate the whole process of wrapping and sending
+    public static OnionPacket buildOnion(
+            byte[] message,
+            List<String> route,
+            KeyRegister keyRegister
+    ) throws InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
+
+        //first we start with validations and error checkups
+        if ( message == null && message.length == 0 ) {
+            throw new IllegalArgumentException(
+                    "Message cannot be null or empty"
+            );
+        }
+
+        if ( route == null && route.isEmpty() ) {
+            throw new IllegalArgumentException(
+                    "Route must contain at least one node"
+            );
+        }
+
+        if (keyRegister == null) {
+            throw new IllegalArgumentException(
+                    "Key register cannot be null"
+            );
+        }
+
+        // extract index and ID of last node
+        int finalNode = route.size() - 1;
+        String finalNodeID = route.get(finalNode);
+
+        // assign the public key for it as the first one
+        PublicKey finalNodePublicKey =
+                keyRegister.getPublicKey(finalNodeID);
+
+        // package it and now start with wrapping relay
+        OnionPacket packet = buildDelivery(
+                message,
+                finalNodePublicKey
+        );
+
+        // wrapping form back to front
+        for ( int index = finalNode - 1; index >= 0 ; index-- ) {
+            String currentNodeID = route.get(index);
+            String nextNodeID = route.get(index + 1);
+
+            PublicKey currentNodePublicKey =
+                    keyRegister.getPublicKey(currentNodeID);
+
+            packet = wrapRelay(
+                    nextNodeID,
+                    packet,
+                    currentNodePublicKey
+            );
+        }
+
+        return packet;
     }
 }
