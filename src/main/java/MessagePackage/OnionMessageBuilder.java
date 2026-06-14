@@ -92,13 +92,13 @@ public class OnionMessageBuilder {
     ) throws InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
 
         //first we start with validations and error checkups
-        if ( message == null && message.length == 0 ) {
+        if ( message == null || message.length == 0 ) {
             throw new IllegalArgumentException(
                     "Message cannot be null or empty"
             );
         }
 
-        if ( route == null && route.isEmpty() ) {
+        if ( route == null || route.isEmpty() ) {
             throw new IllegalArgumentException(
                     "Route must contain at least one node"
             );

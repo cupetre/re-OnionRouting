@@ -27,8 +27,8 @@ public class OnionPacket {
         }
 
         this.encryptedAesKey = encryptedAesKey.clone();
-        this.iv = iv;
-        this.encryptedPayload = encryptedPayload;
+        this.iv = iv.clone();
+        this.encryptedPayload = encryptedPayload.clone();
     }
 
     public byte[] getEncryptedPayload() {
@@ -36,7 +36,7 @@ public class OnionPacket {
     }
 
     public byte[] getIv() {
-        return iv;
+        return iv.clone();
     }
 
     public byte[] getEncryptedAesKey() {

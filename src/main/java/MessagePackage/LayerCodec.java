@@ -58,12 +58,6 @@ public class LayerCodec {
 
         byte type = input.readByte();
 
-        if (input.available() != 0) {
-            throw new IllegalArgumentException(
-                    "Encoded layer contains unexpected extra bytes"
-            );
-        }
-
         DecryptedLayer layer;
 
         if ( type == RELAY_TYPE ) {
@@ -78,7 +72,13 @@ public class LayerCodec {
             throw new IllegalArgumentException("Unknown Layer type: " + type);
         }
 
-          return layer;
+        if (input.available() != 0) {
+            throw new IllegalArgumentException(
+                    "Encoded layer contains unexpected extra bytes"
+            );
+        }
+
+        return layer;
     }
 
     private static DecryptedLayer decodeDelivery(DataInputStream input) throws IOException {
