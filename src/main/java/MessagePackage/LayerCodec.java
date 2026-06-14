@@ -58,6 +58,12 @@ public class LayerCodec {
 
         byte type = input.readByte();
 
+        if (input.available() != 0) {
+            throw new IllegalArgumentException(
+                    "Encoded layer contains unexpected extra bytes"
+            );
+        }
+
         DecryptedLayer layer;
 
         if ( type == RELAY_TYPE ) {
@@ -75,8 +81,18 @@ public class LayerCodec {
           return layer;
     }
 
+    private static DecryptedLayer decodeDelivery(DataInputStream input) throws IOException {
+        byte[] message = readByteArray(
+                input,
+                MAX_PAYLOAD_BYTES,
+                "Final Message"
+        );
+
+        return DecryptedLayer.Deliver(message);
+    }
+
     private static DecryptedLayer decodeRelay(DataInputStream input) throws IOException {
-        //now since our bytearray has the LENGTH of the nextnodeID
+        // now since our bytearray has the LENGTH of the nextnodeID
         // and then the nextnodeID actual byte[] , we need to extract it
         // and see which it is , convert it to string, continue the process
 
@@ -103,6 +119,7 @@ public class LayerCodec {
                 "Encrypted Payload"
         );
 
+        // store up everything together and send it away it gooooooooez
         OnionPacket innerPacket = new OnionPacket(
                 encryptedAesKey,
                 iv,
