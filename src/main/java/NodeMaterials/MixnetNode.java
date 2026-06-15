@@ -1,7 +1,19 @@
 package NodeMaterials;
 
-import java.security.KeyPair;
-import java.security.PublicKey;
+import CryptoUtil.AesEncryption;
+import CryptoUtil.RsaEncryption;
+import Logs.Logger;
+import MessagePackage.DecryptedLayer;
+import MessagePackage.LayerCodec;
+import MessagePackage.OnionPacket;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import java.io.IOException;
+import java.security.*;
 import java.util.Objects;
 
 public class MixnetNode {
@@ -33,6 +45,42 @@ public class MixnetNode {
                 '}';
     }
 
+    // main function for decryption the whole layer
+    public DecryptedLayer decryptedLayer(
+            OnionPacket packet) throws InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException, IOException {
+
+        // check if alls good
+        if (packet == null) {
+            throw new IllegalArgumentException("Packet is empty or null , somethings wrong in passing the packet");
+        }
+
+        // if yes, first unlock with RSA , so we get to teh AES key
+        // that encrypts the whole package
+        byte[] rawAesKey = RsaEncryption.decrypt(
+                packet.getEncryptedAesKey(),
+                keyPair.getPrivate()
+        );
+
+        // pick up the secret key for the AES
+        SecretKey secretAesKey = new SecretKeySpec(rawAesKey, "AES");
+
+        // split the package in sections ( since IV is constant, we get payload only )
+        AesEncryption.EncryptedData encryptedData =
+                new AesEncryption.EncryptedData(
+                        packet.getEncryptedPayload(),
+                        packet.getIv()
+                );
+
+        // decrypt it
+        byte[] encodedLayer =
+                AesEncryption.decrypt(
+                        encryptedData,
+                        secretAesKey
+                );
+
+        // send out the decoded layer as well ( strings instead of bytes[] ) so it knows nextnodeid
+        return LayerCodec.decode(encodedLayer);
+    }
     // we dont make a get private key since its only used internally and it shouldn't be accessible
     public void processRelay() {
         // processing relay shuffle and forwarding
