@@ -1,5 +1,7 @@
 package MessagePackage;
 
+import Logs.LogLevel;
+import Logs.Logger;
 import NodeMaterials.MixnetNode;
 
 import javax.crypto.BadPaddingException;
@@ -32,6 +34,7 @@ public class Router {
         }
 
         nodes.put(node.getNodeId(), node);
+        Logger.log("Router registered node " + node.getNodeId(), LogLevel.Info);
     }
 
     public boolean containsNode(String nodeID) {
@@ -78,17 +81,23 @@ public class Router {
 
         String currentNodeID = startingNodeID;
         OnionPacket currentPacket = packet;
+        int hopCount = 0;
+        Logger.log("Router starting route at node " + startingNodeID, LogLevel.Status);
 
         while (true) {
+            hopCount++;
             MixnetNode currentNode = getNode(currentNodeID);
+            Logger.log("Router sending packet to " + currentNodeID + " at hop " + hopCount, LogLevel.Info);
 
             DecryptedLayer layer =
                     currentNode.decryptedLayer(currentPacket);
 
             if (layer.isDeliver()) {
+                Logger.log("Router received delivery result from " + currentNodeID, LogLevel.Success);
                 return layer.getFinalMessage();
             }
 
+            Logger.log(currentNodeID + " requested forward to " + layer.getNextNodeID(), LogLevel.Status);
             currentNodeID = layer.getNextNodeID();
             currentPacket = layer.getInnerPacket();
         }

@@ -2,6 +2,7 @@ package NodeMaterials;
 
 import CryptoUtil.AesEncryption;
 import CryptoUtil.RsaEncryption;
+import Logs.LogLevel;
 import Logs.Logger;
 import MessagePackage.DecryptedLayer;
 import MessagePackage.LayerCodec;
@@ -24,6 +25,7 @@ public class MixnetNode {
     public MixnetNode(NodeConfig config, KeyPair keyPair) {
         this.config = Objects.requireNonNull(config, "Config cant be null, sorry");
         this.keyPair = Objects.requireNonNull(keyPair, "Cant be a null either, yikes");
+        Logger.log("Initialized mixnet node " + config.getNodeID() + " at " + config.getHost() + ":" + config.getPort(), LogLevel.Info);
     }
 
     public String getNodeId() {
@@ -54,6 +56,8 @@ public class MixnetNode {
             throw new IllegalArgumentException("Packet is empty or null , somethings wrong in passing the packet");
         }
 
+        Logger.log("Node " + getNodeId() + " started decrypting one onion layer", LogLevel.Status);
+
         // if yes, first unlock with RSA , so we get to teh AES key
         // that encrypts the whole package
         byte[] rawAesKey = RsaEncryption.decrypt(
@@ -79,7 +83,9 @@ public class MixnetNode {
                 );
 
         // send out the decoded layer as well ( strings instead of bytes[] ) so it knows nextnodeid
-        return LayerCodec.decode(encodedLayer);
+        DecryptedLayer layer = LayerCodec.decode(encodedLayer);
+        Logger.log("Node " + getNodeId() + " decoded layer type " + layer.getType(), LogLevel.Success);
+        return layer;
     }
     // we dont make a get private key since its only used internally and it shouldn't be accessible
     public void processRelay() {

@@ -3,6 +3,8 @@ package MessagePackage;
 import CryptoUtil.AesEncryption;
 import CryptoUtil.KeyRegister;
 import CryptoUtil.RsaEncryption;
+import Logs.LogLevel;
+import Logs.Logger;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -34,18 +36,22 @@ public class OnionMessageBuilder {
         }
 
         // encode the exisitng message + route ?
+        Logger.log("Encoding " + layer.getType() + " layer", LogLevel.Debug);
         byte[] encodedLayer = LayerCodec.encode(layer);
         // take whole package
         // gen pairs and both encryption
         SecretKey aesKey = AesEncryption.generateAesKey();
+        Logger.log("Generated AES key for one onion layer", LogLevel.Debug);
 
         AesEncryption.EncryptedData encryptedData =
                 AesEncryption.encrypt(encodedLayer, aesKey);
+        Logger.log("Encrypted one encoded onion layer with AES-GCM", LogLevel.Debug);
 
         byte[] encryptedAesKey = RsaEncryption.encrypt(
                 aesKey.getEncoded(),
                 nodePublicKey
         );
+        Logger.log("Wrapped layer AES key with receiving node public key", LogLevel.Debug);
 
         return new OnionPacket(encryptedAesKey,
                 encryptedData.getIv(),
@@ -57,6 +63,8 @@ public class OnionMessageBuilder {
             byte[] message,
             PublicKey destinationPublicKey
     ) throws InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
+        Logger.log("Building final delivery layer", LogLevel.Status);
+
         DecryptedLayer deliveryLayer =
                 DecryptedLayer.Deliver(message);
 
@@ -72,6 +80,8 @@ public class OnionMessageBuilder {
             OnionPacket innerPacket, // the packet for wrapping
             PublicKey relayPublicKey // the key to encrypt
     ) throws InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
+        Logger.log("Wrapping relay layer toward next node " + nextNodeID, LogLevel.Status);
+
         DecryptedLayer relayLater =
                 DecryptedLayer.relay(
                         nextNodeID,
@@ -110,9 +120,12 @@ public class OnionMessageBuilder {
             );
         }
 
+        Logger.log("Building onion route with " + route.size() + " node(s)", LogLevel.Status);
+
         // extract index and ID of last node
         int finalNode = route.size() - 1;
         String finalNodeID = route.get(finalNode);
+        Logger.log("Preparing innermost delivery layer for " + finalNodeID, LogLevel.Info);
 
         // assign the public key for it as the first one
         PublicKey finalNodePublicKey =
@@ -128,6 +141,7 @@ public class OnionMessageBuilder {
         for ( int index = finalNode - 1; index >= 0 ; index-- ) {
             String currentNodeID = route.get(index);
             String nextNodeID = route.get(index + 1);
+            Logger.log("Preparing relay wrapper for " + currentNodeID + " -> " + nextNodeID, LogLevel.Info);
 
             PublicKey currentNodePublicKey =
                     keyRegister.getPublicKey(currentNodeID);
@@ -139,6 +153,7 @@ public class OnionMessageBuilder {
             );
         }
 
+        Logger.log("Finished building onion packet for entry node " + route.get(0), LogLevel.Success);
         return packet;
     }
 }

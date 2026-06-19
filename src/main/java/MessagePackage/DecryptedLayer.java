@@ -32,8 +32,7 @@ public class DecryptedLayer {
             throw new IllegalArgumentException("the inner packet is null");
         }
 
-        Logger.log("Everything is okey , this message will be forwarded to " +
-                "the next upcoming node" , LogLevel.Status);
+        Logger.log("Created relay instruction for next node " + nextNodeID, LogLevel.Debug);
 
         return new DecryptedLayer(
                 LayerType.RELAY,
@@ -50,8 +49,7 @@ public class DecryptedLayer {
         if ( finalMessage == null || finalMessage.length == 0 ) {
             throw new IllegalArgumentException(" the final message is empty as shit");
         }
-        Logger.log("The message is okey and it is in the step of delivery" +
-                " next step should reveale the msg", LogLevel.Status);
+        Logger.log("Created delivery instruction", LogLevel.Debug);
 
         return new DecryptedLayer(
                 LayerType.DELIVER,
