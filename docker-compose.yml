@@ -3,7 +3,6 @@ services:
     build: .
     image: onion-routing-demo:latest
     environment:
-      APP_MODE: node
       NODE_ID: node-1
     ports:
       - "4444:4444"
@@ -13,7 +12,6 @@ services:
   node-2:
     image: onion-routing-demo:latest
     environment:
-      APP_MODE: node
       NODE_ID: node-2
     ports:
       - "4445:4445"
@@ -25,7 +23,6 @@ services:
   node-3:
     image: onion-routing-demo:latest
     environment:
-      APP_MODE: node
       NODE_ID: node-3
     ports:
       - "4446:4446"
@@ -37,9 +34,8 @@ services:
 
   client:
     image: onion-routing-demo:latest
-    command: ["Hello from the Docker client through the onion mixnet"]
-    environment:
-      APP_MODE: client
+    stdin_open: true
+    tty: true
     networks:
       - onion-net
     depends_on:

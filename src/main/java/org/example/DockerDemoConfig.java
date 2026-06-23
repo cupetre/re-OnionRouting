@@ -43,6 +43,7 @@ public class DockerDemoConfig {
         return directory;
     }
 
+    // generate the keys for eeach node in a map
     public KeyRegister createKeyRegister() throws Exception {
         KeyRegister keyRegister = new KeyRegister();
 
@@ -53,6 +54,7 @@ public class DockerDemoConfig {
         return keyRegister;
     }
 
+    // creating the network on disc
     public NodeConfig createNetworkConfig(String nodeID) {
         return new NodeConfig(
                 nodeID,
@@ -61,6 +63,7 @@ public class DockerDemoConfig {
         );
     }
 
+    // server starter
     public NodeConfig createServerConfig(String nodeID) {
         return new NodeConfig(
                 nodeID,
@@ -69,6 +72,7 @@ public class DockerDemoConfig {
         );
     }
 
+    // assigning generated keys
     public KeyPair keyPairFor(String nodeID) throws Exception {
         PublicKey publicKey = publicKeyFor(nodeID);
         PrivateKey privateKey = RsaEncryption.privateKeyFromBase64(

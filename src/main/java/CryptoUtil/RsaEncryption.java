@@ -57,11 +57,6 @@ public class RsaEncryption {
         return cipher.doFinal(cipherText);
     }
 
-    public static String publicKeyToBase64(PublicKey publicKey) {
-        Objects.requireNonNull(publicKey, "Public key cannot be null");
-        return Base64.getEncoder().encodeToString(publicKey.getEncoded());
-    }
-
     public static PublicKey publicKeyFromBase64(String encodedPublicKey) throws Exception {
         Objects.requireNonNull(encodedPublicKey, "Encoded public key cannot be null");
 
