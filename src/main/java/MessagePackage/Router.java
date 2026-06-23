@@ -82,11 +82,13 @@ public class Router {
         String currentNodeID = startingNodeID;
         OnionPacket currentPacket = packet;
         int hopCount = 0;
+
         Logger.log("Router starting route at node " + startingNodeID, LogLevel.Status);
 
         while (true) {
             hopCount++;
             MixnetNode currentNode = getNode(currentNodeID);
+
             Logger.log("Router sending packet to " + currentNodeID + " at hop " + hopCount, LogLevel.Info);
 
             DecryptedLayer layer =

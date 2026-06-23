@@ -45,7 +45,7 @@ public class DecryptedLayer {
     // instructions for the last node, aka , the first step of the proces
     // we tell the last node that its last, and it only waits for a delivery
     // aka it only gets the fnal message and thats it
-    public static DecryptedLayer Deliver(byte[] finalMessage) {
+    public static DecryptedLayer deliver(byte[] finalMessage) {
         if ( finalMessage == null || finalMessage.length == 0 ) {
             throw new IllegalArgumentException(" the final message is empty as shit");
         }

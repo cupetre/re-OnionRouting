@@ -47,7 +47,7 @@ public class MixnetNode {
                 '}';
     }
 
-    // main function for decryption the whole layer
+    // main function for decryption of the whole layer
     public DecryptedLayer decryptedLayer(
             OnionPacket packet) throws InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException, IOException {
 
@@ -87,6 +87,7 @@ public class MixnetNode {
         Logger.log("Node " + getNodeId() + " decoded layer type " + layer.getType(), LogLevel.Success);
         return layer;
     }
+
     // we dont make a get private key since its only used internally and it shouldn't be accessible
     public void processRelay() {
         // processing relay shuffle and forwarding

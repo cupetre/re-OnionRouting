@@ -1,6 +1,5 @@
 package MessagePackage;
 
-import javax.swing.*;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 
@@ -88,7 +87,7 @@ public class LayerCodec {
                 "Final Message"
         );
 
-        return DecryptedLayer.Deliver(message);
+        return DecryptedLayer.deliver(message);
     }
 
     private static DecryptedLayer decodeRelay(DataInputStream input) throws IOException {

@@ -15,7 +15,7 @@ class LayerCodecTest {
     @Test
     void deliveryLayerShouldSurviveEncodeDecodeRoundTrip() throws IOException {
         byte[] message = "Hello onion routing".getBytes();
-        DecryptedLayer original = DecryptedLayer.Deliver(message);
+        DecryptedLayer original = DecryptedLayer.deliver(message);
 
         byte[] encoded = LayerCodec.encode(original);
         DecryptedLayer decoded = LayerCodec.decode(encoded);
@@ -70,7 +70,7 @@ class LayerCodecTest {
     @Test
     void decodeShouldRejectUnexpectedExtraBytes() {
         byte[] encoded = LayerCodec.encode(
-                DecryptedLayer.Deliver("Hello".getBytes())
+                DecryptedLayer.deliver("Hello".getBytes())
         );
         byte[] withExtraByte =
                 Arrays.copyOf(encoded, encoded.length + 1);
@@ -85,7 +85,7 @@ class LayerCodecTest {
     @Test
     void decodeShouldRejectTruncatedData() {
         byte[] encoded = LayerCodec.encode(
-                DecryptedLayer.Deliver("Hello".getBytes())
+                DecryptedLayer.deliver("Hello".getBytes())
         );
         byte[] truncated =
                 Arrays.copyOf(encoded, encoded.length - 1);

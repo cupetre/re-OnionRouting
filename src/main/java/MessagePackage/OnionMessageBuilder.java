@@ -15,11 +15,6 @@ import java.util.List;
 
 public class OnionMessageBuilder {
 
-    // provide structure
-    private OnionMessageBuilder() {
-
-    }
-
     private static OnionPacket encryptLayer (
             DecryptedLayer layer,
             PublicKey nodePublicKey
@@ -37,7 +32,9 @@ public class OnionMessageBuilder {
 
         // encode the exisitng message + route ?
         Logger.log("Encoding " + layer.getType() + " layer", LogLevel.Debug);
+
         byte[] encodedLayer = LayerCodec.encode(layer);
+
         // take whole package
         // gen pairs and both encryption
         SecretKey aesKey = AesEncryption.generateAesKey();
@@ -51,7 +48,7 @@ public class OnionMessageBuilder {
                 aesKey.getEncoded(),
                 nodePublicKey
         );
-        Logger.log("Wrapped layer AES key with receiving node public key", LogLevel.Debug);
+        Logger.log("Wrapped AES key with receiving RSA node public key", LogLevel.Debug);
 
         return new OnionPacket(encryptedAesKey,
                 encryptedData.getIv(),
@@ -66,7 +63,7 @@ public class OnionMessageBuilder {
         Logger.log("Building final delivery layer", LogLevel.Status);
 
         DecryptedLayer deliveryLayer =
-                DecryptedLayer.Deliver(message);
+                DecryptedLayer.deliver(message);
 
         return encryptLayer(
                 deliveryLayer,
@@ -82,14 +79,14 @@ public class OnionMessageBuilder {
     ) throws InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
         Logger.log("Wrapping relay layer toward next node " + nextNodeID, LogLevel.Status);
 
-        DecryptedLayer relayLater =
+        DecryptedLayer relayLayer =
                 DecryptedLayer.relay(
                         nextNodeID,
                         innerPacket
                 );
 
         return encryptLayer(
-                relayLater,
+                relayLayer,
                 relayPublicKey
                 );
     }
@@ -139,8 +136,10 @@ public class OnionMessageBuilder {
 
         // wrapping form back to front
         for ( int index = finalNode - 1; index >= 0 ; index-- ) {
+
             String currentNodeID = route.get(index);
             String nextNodeID = route.get(index + 1);
+
             Logger.log("Preparing relay wrapper for " + currentNodeID + " -> " + nextNodeID, LogLevel.Info);
 
             PublicKey currentNodePublicKey =

@@ -1,0 +1,54 @@
+services:
+  node-1:
+    build: .
+    image: onion-routing-demo:latest
+    environment:
+      APP_MODE: node
+      NODE_ID: node-1
+    ports:
+      - "4444:4444"
+    networks:
+      - onion-net
+
+  node-2:
+    image: onion-routing-demo:latest
+    environment:
+      APP_MODE: node
+      NODE_ID: node-2
+    ports:
+      - "4445:4445"
+    networks:
+      - onion-net
+    depends_on:
+      - node-1
+
+  node-3:
+    image: onion-routing-demo:latest
+    environment:
+      APP_MODE: node
+      NODE_ID: node-3
+    ports:
+      - "4446:4446"
+    networks:
+      - onion-net
+    depends_on:
+      - node-1
+      - node-2
+
+  client:
+    image: onion-routing-demo:latest
+    command: ["Hello from the Docker client through the onion mixnet"]
+    environment:
+      APP_MODE: client
+    networks:
+      - onion-net
+    depends_on:
+      - node-1
+      - node-2
+      - node-3
+    profiles:
+      - client
+
+networks:
+  onion-net:
+    driver: bridge

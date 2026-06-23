@@ -16,13 +16,28 @@ import NodeMaterials.NodeDirectory;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.util.List;
+import java.util.Scanner;
+import java.util.concurrent.CountDownLatch;
 
 public class Main {
     public static void main(String[] args) throws Exception {
-        String mode = args.length == 0 ? "memory-demo" : args[0];
+        String appMode = System.getenv("APP_MODE");
+        boolean modeFromEnvironment = appMode != null && !appMode.isBlank();
+        String mode = modeFromEnvironment ? appMode : args.length == 0 ? "memory-demo" : args[0];
+        int valueStartIndex = modeFromEnvironment ? 0 : 1;
 
         if ("http-demo".equalsIgnoreCase(mode)) {
-            runHttpDemo();
+            runHttpDemo(readMessage(args, valueStartIndex));
+            return;
+        }
+
+        if ("node".equalsIgnoreCase(mode)) {
+            runDockerNode(args, valueStartIndex);
+            return;
+        }
+
+        if ("client".equalsIgnoreCase(mode)) {
+            runDockerClient(readMessage(args, valueStartIndex));
             return;
         }
 
@@ -77,7 +92,7 @@ public class Main {
         Logger.log("In-memory onion routing demo finished", LogLevel.Success);
     }
 
-    private static void runHttpDemo() throws Exception {
+    private static void runHttpDemo(String userMessage) throws Exception {
         Logger.log("Starting HTTP onion routing demo", LogLevel.Status);
 
         KeyPair node1Keys = RsaEncryption.generateKeyPair();
@@ -119,9 +134,10 @@ public class Main {
             server3.start();
 
             List<String> route = List.of("node-1", "node-2", "node-3");
-            byte[] message = "Hello professor, this message travelled through HTTP onion nodes.".getBytes(StandardCharsets.UTF_8);
+            byte[] message = userMessage.getBytes(StandardCharsets.UTF_8);
 
             Logger.log("HTTP demo route: " + String.join(" -> ", route), LogLevel.Info);
+            Logger.log("User message accepted, preparing HTTP onion request", LogLevel.Info);
             Logger.log("Building encrypted onion packet for HTTP route", LogLevel.Status);
             OnionPacket onionPacket = OnionMessageBuilder.buildOnion(
                     message,
@@ -143,5 +159,97 @@ public class Main {
             server2.stop();
             server3.stop();
         }
+    }
+
+    private static void runDockerNode(String[] args, int valueStartIndex) throws Exception {
+        String nodeID = readNodeID(args, valueStartIndex);
+        DockerDemoConfig dockerDemoConfig = new DockerDemoConfig();
+
+        MixnetNode node = new MixnetNode(
+                dockerDemoConfig.createServerConfig(nodeID),
+                dockerDemoConfig.keyPairFor(nodeID)
+        );
+
+        HttpTransport transport = new HttpTransport();
+        HttpMixnetNodeServer server = new HttpMixnetNodeServer(
+                node,
+                dockerDemoConfig.createNodeDirectory(),
+                transport
+        );
+
+        Logger.log("Starting Docker node mode for " + nodeID, LogLevel.Status);
+        server.start();
+        new CountDownLatch(1).await();
+    }
+
+    private static void runDockerClient(String userMessage) throws Exception {
+        DockerDemoConfig dockerDemoConfig = new DockerDemoConfig();
+        List<String> route = dockerDemoConfig.getRoute();
+
+        Logger.log("Starting Docker client mode", LogLevel.Status);
+        Logger.log("Docker route: " + String.join(" -> ", route), LogLevel.Info);
+
+        byte[] message = userMessage.getBytes(StandardCharsets.UTF_8);
+        OnionPacket onionPacket = OnionMessageBuilder.buildOnion(
+                message,
+                route,
+                dockerDemoConfig.createKeyRegister()
+        );
+
+        HttpTransport transport = new HttpTransport();
+        byte[] deliveredMessage = transport.sendPacket(
+                dockerDemoConfig.createNodeDirectory().getConfig(route.get(0)),
+                onionPacket
+        );
+
+        Logger.log(
+                "Docker delivered message: " + new String(deliveredMessage, StandardCharsets.UTF_8),
+                LogLevel.Success
+        );
+    }
+
+    private static String readNodeID(String[] args, int valueStartIndex) {
+        if (args.length > valueStartIndex && !args[valueStartIndex].isBlank()) {
+            return args[valueStartIndex];
+        }
+
+        String nodeID = System.getenv("NODE_ID");
+
+        if (nodeID == null || nodeID.isBlank()) {
+            throw new IllegalArgumentException("Node id must be passed as an argument or NODE_ID env variable");
+        }
+
+        return nodeID;
+    }
+
+    private static String readMessage(String[] args, int valueStartIndex) {
+        if (args.length > valueStartIndex) {
+            StringBuilder messageBuilder = new StringBuilder();
+
+            for (int i = valueStartIndex; i < args.length; i++) {
+                if (!messageBuilder.isEmpty()) {
+                    messageBuilder.append(" ");
+                }
+
+                messageBuilder.append(args[i]);
+            }
+
+            String message = messageBuilder.toString();
+
+            if (!message.isBlank()) {
+                return message;
+            }
+        }
+
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("Enter message to send through the HTTP onion route: ");
+
+        String message = scanner.nextLine();
+
+        if (message == null || message.isBlank()) {
+            throw new IllegalArgumentException("Message cannot be empty");
+        }
+
+        return message;
     }
 }

@@ -8,6 +8,7 @@ import javax.crypto.spec.OAEPParameterSpec;
 import javax.crypto.spec.PSource;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -15,6 +16,8 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.spec.MGF1ParameterSpec;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.Objects;
 
@@ -57,5 +60,25 @@ public class RsaEncryption {
     public static String publicKeyToBase64(PublicKey publicKey) {
         Objects.requireNonNull(publicKey, "Public key cannot be null");
         return Base64.getEncoder().encodeToString(publicKey.getEncoded());
+    }
+
+    public static PublicKey publicKeyFromBase64(String encodedPublicKey) throws Exception {
+        Objects.requireNonNull(encodedPublicKey, "Encoded public key cannot be null");
+
+        byte[] keyBytes = Base64.getDecoder().decode(encodedPublicKey);
+        X509EncodedKeySpec keySpec = new X509EncodedKeySpec(keyBytes);
+        KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM);
+
+        return keyFactory.generatePublic(keySpec);
+    }
+
+    public static PrivateKey privateKeyFromBase64(String encodedPrivateKey) throws Exception {
+        Objects.requireNonNull(encodedPrivateKey, "Encoded private key cannot be null");
+
+        byte[] keyBytes = Base64.getDecoder().decode(encodedPrivateKey);
+        PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyBytes);
+        KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM);
+
+        return keyFactory.generatePrivate(keySpec);
     }
 }
