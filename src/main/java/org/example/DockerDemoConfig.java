@@ -1,0 +1,89 @@
+package org.example;
+
+public class DockerDemoConfig {
+    package org.example;
+
+import CryptoUtil.KeyRegister;
+import CryptoUtil.RsaEncryption;
+import NodeMaterials.NodeConfig;
+import NodeMaterials.NodeDirectory;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Properties;
+
+    public class DockerDemoConfig {
+        private static final String CONFIG_FILE = "docker-nodes.properties";
+        private static final String SERVER_BIND_HOST = "0.0.0.0";
+
+        private final Properties properties;
+        private final List<String> route;
+
+        public DockerDemoConfig() throws IOException {
+            this.properties = loadProperties();
+            this.route = Arrays.stream(requiredProperty("route").split(","))
+                    .map(String::trim)
+                    .filter(nodeID -> !nodeID.isBlank())
+                    .toList();
+        }
+
+        public List<String> getRoute() {
+            return route;
+        }
+
+        public NodeDirectory createNodeDirectory() {
+            NodeDirectory directory = new NodeDirectory();
+
+            for (String nodeID : route) {
+                directory.register(createNetworkConfig(nodeID));
+            }
+
+            return directory;
+        }
+
+        public KeyRegister createKeyRegister() throws Exception {
+            KeyRegister keyRegister = new KeyRegister();
+
+            for (String nodeID : route) {
+                keyRegister.register(nodeID, publicKeyFor(nodeID));
+            }
+
+            return keyRegister;
+        }
+
+        public NodeConfig createNetworkConfig(String nodeID) {
+            return new NodeConfig(
+                    nodeID,
+                    requiredProperty("node." + nodeID + ".host"),
+                    portFor(nodeID)
+            );
+        }
+
+        public NodeConfig createServerConfig(String nodeID) {
+            return new NodeConfig(
+                    nodeID,
+                    SERVER_BIND_HOST,
+                    portFor(nodeID)
+            );
+        }
+
+        public KeyPair keyPairFor(String nodeID) throws Exception {
+            PublicKey publicKey = publicKeyFor(nodeID);
+            PrivateKey privateKey = RsaEncryption.privateKeyFromBase64(
+                    requiredProperty("node." + nodeID + ".privateKey")
+            );
+
+            return new KeyPair(publicKey, privateKey);
+        }
+
+        private PublicKey publicKeyFor(String nodeID) throws Exception {
+            return RsaEncryption.publicKeyFromBase64(
+                    requiredProperty("node." + nodeID + ".publicKey")
+            );
+        }
+}
